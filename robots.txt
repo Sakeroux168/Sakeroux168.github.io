@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sakeroux168.github.io/sitemap.xml

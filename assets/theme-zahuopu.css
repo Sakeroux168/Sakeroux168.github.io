@@ -19,10 +19,11 @@
   --on-lime: #2b2118;
   --violet: #2f6b4f;      /* 老式绿漆 */
   --on-violet: #fbf3dc;
-  --pink: #c8372d;        /* 印章红 */
+  --pink: #b02e25;        /* 印章红 */
   --on-pink: #fff4e2;
   --primary-text: #fff4e2;
   --bulb: #ffe08a;
+  --mask: rgba(43, 33, 24, .6);
   --hand: "KaiTi", "STKaiti", "Kaiti SC", "BiauKai", serif;   /* 手写感：系统自带楷体 */
   --wobble: 255px 15px 225px 15px / 15px 225px 15px 255px;   /* 手绘的歪边 */
   --paper-r: 4px 12px 6px 14px / 14px 6px 12px 4px;
@@ -43,11 +44,12 @@
     --band-muted: #d9a98a;
     --lime: #e0b23c;
     --on-lime: #1d1712;
-    --violet: #3f8a66;
-    --on-violet: #f2efe0;
-    --pink: #d2463a;
-    --on-pink: #fff1dc;
-    --primary-text: #fff1dc;
+    --violet: #5fb88a;
+    --on-violet: #14100c;
+    --pink: #e66a5c;
+    --on-pink: #14100c;
+    --primary-text: #14100c;
+    --mask: rgba(0, 0, 0, .65);
   }
 }
 
@@ -126,7 +128,7 @@ body {
 .track i { color: var(--bulb); }
 
 /* ---------- 区块标题：背后的空心大字 + 荧光笔 ---------- */
-.ghost { opacity: .13; letter-spacing: .02em; left: 64px; top: -20px; rotate: -3deg; }
+.ghost { opacity: .07; letter-spacing: .02em; left: auto; right: 0; top: -6px; rotate: -3deg; }
 .back { display: block; width: fit-content; }
 .sec-head h2 {
   padding: 0 6px;
@@ -170,18 +172,18 @@ body {
 
 /* 红色圆印章：在售 / 免费 / 开发中 */
 .sticker {
-  top: 12px; right: 12px; width: 62px; height: 62px; padding: 0; display: grid; place-items: center;
+  top: 12px; right: 12px; width: 68px; height: 68px; padding: 0; display: grid; place-items: center;
   background: transparent; color: var(--pink); border: 3px solid var(--pink); border-radius: 50%;
-  font: 900 16px/1 var(--hand); letter-spacing: .04em; transform: none; rotate: -14deg; opacity: .88;
+  font: 900 14px/1 var(--hand); letter-spacing: .02em; transform: none; rotate: -14deg; opacity: 1;
   box-shadow: inset 0 0 0 3px var(--card), inset 0 0 0 5px var(--pink);
 }
 .sticker.alt { color: var(--violet); border-color: var(--violet); box-shadow: inset 0 0 0 3px var(--card), inset 0 0 0 5px var(--violet); }
-.pcard h3 { padding-right: 58px; }
+.pcard h3 { padding-right: 64px; }
 .plan .sticker, .sticker.big {
   width: auto; height: auto; padding: 7px 12px 5px; border-radius: 5px; font-size: 17px;
   top: -16px; right: 14px; rotate: 6deg; background: var(--card); box-shadow: none; opacity: 1;
 }
-.ph-row .sticker { top: -8px; right: -74px; background: transparent; box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 5px var(--pink); }
+.ph-row .sticker { top: -8px; right: -80px; background: transparent; box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 5px var(--pink); }
 
 /* 推荐方案：黄色价签纸 */
 .plan.hot {
@@ -193,8 +195,6 @@ body {
 .flow li { border-radius: var(--wobble); border-width: 2.5px; }
 .filters button { border-radius: var(--wobble); border-width: 2.5px; }
 .note { border-radius: var(--paper-r); font-family: var(--hand); font-size: 17px; }
-.hs-intro em { font-family: var(--hand); font-size: 18px; }
-.hs-end { border-radius: var(--paper-r); }
 .changelog li, .faq details, .post-nav a { border-radius: var(--paper-r); border-width: 2.5px; }
 .modal { border-radius: 14px; }
 figcaption { font-family: var(--hand); font-size: 15px; }
@@ -208,7 +208,7 @@ figcaption { font-family: var(--hand); font-size: 15px; }
 
 /* 滚动时：招牌整体上移并歪一点（不再单独放大字） */
 .motion .hero .sign .mega { translate: none; scale: none; opacity: 1; }
-.motion .hero .sign { translate: 0 calc(var(--p, 0) * -60px); rotate: calc(-1.5deg - var(--p, 0) * 6deg); }
+.motion .hero .sign { translate: 0 calc(var(--p, 0) * -40px); rotate: calc(-1.5deg - var(--p, 0) * 2deg); }
 
 @media (max-width: 760px) {
   .sign { padding: 16px 22px 10px; }
@@ -221,4 +221,31 @@ figcaption { font-family: var(--hand); font-size: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sign::before, .open-sign { animation: none; }
+}
+
+
+/* ---------- 第三轮：可读性修复 ---------- */
+@media (prefers-color-scheme: dark) {
+  /* 深色下标题高亮条淡一点，字才看得清 */
+  :root:not([data-theme="light"]) .sec-head h2 {
+    background: linear-gradient(transparent 70%, color-mix(in srgb, var(--lime) 35%, transparent) 70% 94%, transparent 94%);
+  }
+  /* 胶带在深色下别像泥块 */
+  :root:not([data-theme="light"]) .card::before { background: color-mix(in srgb, var(--lime) 30%, transparent); }
+  :root:not([data-theme="light"]) .sticker { box-shadow: inset 0 0 0 3px var(--card), inset 0 0 0 5px var(--pink); }
+}
+.wx-fab { border-radius: var(--wobble); }
+.rules, .anti-scam { font-family: var(--hand); font-size: 16px; }
+
+@media (max-width: 760px) {
+  /* 手机首屏：头像缩小，木牌挂在头像上方不挡字 */
+  .avatar-wrap { width: 128px; height: 128px; margin-top: 34px; }
+  .ring text { font-size: 16px; }
+  .brand { font-size: 19px; }
+  .nav nav a { padding: 5px 5px; font-size: 13.5px; }
+  .avatar { inset: 20px; }
+  .avatar.ph { font-size: 44px; }
+  .open-sign { top: -40px; right: 4px; }
+  .open-sign span { font-size: 16px; padding: 7px 10px 6px 12px; }
+  .hero { padding-top: 24px; }
 }

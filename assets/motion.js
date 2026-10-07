@@ -3,14 +3,14 @@
  *
  * 做了这些事：
  *  - 顶部进度条
- *  - 元素滚动到时飞入；价格数字从 0 跳到目标值
- *  - 不同区块背景色慢慢渐变（看 style.css 里的 data-tone 颜色）
- *  - 开头大字逐字掉落，往下滚时放大淡出；星星、色块视差移动
- *  - 区块背后的空心英文横向漂移
- *  - 字幕条跟着滚动方向走，滚得越快跑得越快、越歪
- *  - 一条贯穿全站的 SVG 线，随滚动一笔一笔画出来
- *  - 电脑上「软件」区变成横向长廊：竖着滚，卡片横着走
+ *  - 元素滚动到时飞入
+ *  - 不同区块背景色慢慢渐变（颜色在 theme-zahuopu.css 里搜 data-tone）
+ *  - 开头招牌逐字掉落，往下滚时上移；星星、色块视差移动
+ *  - 区块背后的空心大字横向漂移
+ *  - 横幅字幕跟着滚动方向走，滚得越快跑得越快
+ *  - 一条贯穿全站的红线，随滚动一笔一笔画出来
  *
+ * 访客开了「减少动态效果」时整个文件不运行。
  * 想关掉某个效果，删掉 refresh() 里对应那一行即可。
  */
 (function () {
@@ -20,7 +20,6 @@
 
   const root = document.documentElement;
   const main = document.querySelector("main");
-  const NAV = 60;
   const SVG_NS = "http://www.w3.org/2000/svg";
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
   const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -28,6 +27,7 @@
 
   const bar = document.createElement("div");
   bar.className = "progress";
+  bar.setAttribute("aria-hidden", "true");
   document.body.appendChild(bar);
 
   /* ---------- 大标题拆成单个字 ---------- */
@@ -41,30 +41,14 @@
     });
   }
 
-  /* ---------- 飞入 & 数字跳动 ---------- */
-  const REVEAL = ".card, .hs-panel, .sec-head, .flow li, .changelog li, .faq details, .post-body > *, .post-nav a";
-
-  function countUp(el) {
-    el.querySelectorAll("[data-count]").forEach((n) => {
-      const to = +n.dataset.count;
-      if (!to || n._counted) return;
-      n._counted = true;
-      const t0 = performance.now();
-      const step = (t) => {
-        const k = clamp((t - t0) / 900);
-        n.textContent = Math.round(to * (1 - Math.pow(1 - k, 3)));
-        if (k < 1) requestAnimationFrame(step);
-      };
-      n.textContent = "0";
-      requestAnimationFrame(step);
-    });
-  }
+  /* ---------- 飞入 ---------- */
+  // 注意：标题用的是 .sec-head（不是里面的 h2），因为 h2 一开始被 clip-path 裁掉，浏览器会认为它“看不见”
+  const REVEAL = ".card, .sec-head, .flow li, .changelog li, .faq details, .post-body > *, .post-nav a, .rules, .notice";
 
   const revealIO = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
       e.target.classList.add("in");
-      countUp(e.target);
       revealIO.unobserve(e.target);
     });
   }, { rootMargin: "0px 0px -6% 0px", threshold: 0.1 });
@@ -100,6 +84,7 @@
     const vh = innerHeight;
     for (const el of pEls) {
       const r = el.getBoundingClientRect();
+      if (r.bottom < -vh || r.top > vh * 2) continue;   // 离屏幕很远的不算
       let p;
       if (el.dataset.p === "out") p = clamp(-r.top / Math.max(1, r.height));
       else if (el.dataset.p === "enter") p = clamp((vh - r.top) / Math.max(1, r.height));
@@ -108,36 +93,6 @@
         el._p = p;
         el.style.setProperty("--p", p.toFixed(4));
       }
-    }
-  }
-
-  /* ---------- 横向长廊 ---------- */
-  let galleries = [];
-
-  function layoutGalleries() {
-    galleries = [...document.querySelectorAll(".hscroll")].map((sec) => {
-      const track = sec.querySelector(".hs-track");
-      sec.classList.remove("pinned");
-      sec.style.removeProperty("--hs-h");
-      if (!track || innerWidth < 900) return null;
-      sec.classList.add("pinned");
-      const dist = track.scrollWidth - innerWidth;
-      if (dist < 60) {
-        sec.classList.remove("pinned");
-        return null;
-      }
-      sec.style.setProperty("--hs-h", innerHeight - NAV + dist + "px");
-      return { sec, track, dist };
-    }).filter(Boolean);
-  }
-
-  function updateGalleries() {
-    for (const g of galleries) {
-      const p = clamp((NAV - g.sec.getBoundingClientRect().top) / g.dist);
-      if (g._p === p) continue;
-      g._p = p;
-      g.track.style.setProperty("--hs-x", (-p * g.dist).toFixed(1) + "px");
-      g.sec.style.setProperty("--hp", p.toFixed(4));
     }
   }
 
@@ -217,12 +172,25 @@
     thread.dot.style.opacity = len > 1 ? 1 : 0;
   }
 
-  /* ---------- 主循环：速度、字幕、进度 ---------- */
+  /* ---------- 横幅字幕 ---------- */
   let tracks = [];
+
+  function measureTracks() {
+    tracks = [...document.querySelectorAll(".marquee .track")].map((t) => {
+      // 内容重复了 4 份，循环长度 = 第 3 份开头到第 1 份开头的距离（两份）
+      const copies = +t.dataset.copies || 4;
+      const per = t.children.length / copies;
+      const third = t.children[per * 2];
+      const loop = third ? third.offsetLeft - t.children[0].offsetLeft : t.scrollWidth / 2;
+      return { el: t, loop, x: 0 };
+    });
+  }
+
+  /* ---------- 主循环 ---------- */
   let lastY = scrollY;
   let v = 0;
   let dir = 1;
-  let lastV = null;
+  let dirty = true;
 
   function frame() {
     const y = scrollY;
@@ -230,36 +198,31 @@
     lastY = y;
     v += (dy - v) * 0.18;
     if (Math.abs(dy) > 0.5) dir = dy > 0 ? 1 : -1;
-    const vn = clamp(v / 45, -1, 1);
-    const vr = Math.abs(vn) < 0.005 ? 0 : +vn.toFixed(3);
-    if (vr !== lastV) {
-      lastV = vr;
-      root.style.setProperty("--v", vr);
-    }
 
     for (const t of tracks) {
-      const half = t.scrollWidth / 2;
-      if (!half) continue;
-      let x = (t._x || 0) - (0.7 + Math.abs(v) * 0.4) * dir;
-      if (x <= -half) x += half;
-      if (x > 0) x -= half;
-      t._x = x;
-      t.style.transform = `translate3d(${x.toFixed(1)}px,0,0) skewX(${(vn * -14).toFixed(2)}deg)`;
+      if (!t.loop) continue;
+      t.x -= (0.6 + Math.min(Math.abs(v), 60) * 0.3) * dir;
+      if (t.x <= -t.loop) t.x += t.loop;
+      if (t.x > 0) t.x -= t.loop;
+      t.el.style.transform = `translate3d(${t.x.toFixed(1)}px,0,0)`;
     }
 
-    const max = document.documentElement.scrollHeight - innerHeight;
-    bar.style.transform = `scaleX(${max > 0 ? clamp(y / max) : 0})`;
-
-    updateProgress();
-    updateGalleries();
-    updateThread();
+    // 页面没滚动、也没变化时，跳过下面这些计算（省电）
+    if (dy !== 0 || dirty) {
+      dirty = false;
+      const max = document.documentElement.scrollHeight - innerHeight;
+      bar.style.transform = `scaleX(${max > 0 ? clamp(y / max) : 0})`;
+      updateProgress();
+      updateThread();
+    }
     requestAnimationFrame(frame);
   }
 
   /* ---------- 初始化 & 页面内容变化时重新扫描 ---------- */
   function relayout() {
-    layoutGalleries();
     buildThread();
+    measureTracks();
+    dirty = true;
   }
 
   function refresh() {
@@ -267,7 +230,6 @@
     scanReveal();
     scanTones();
     scanProgress();
-    tracks = [...document.querySelectorAll(".marquee .track")];
     relayout();
   }
 

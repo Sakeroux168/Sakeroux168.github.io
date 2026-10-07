@@ -13,21 +13,21 @@
 
 /* ---------- 出现动画：滚动到时飞入 ---------- */
 .motion .rv {
-  opacity: 0; translate: 0 56px; scale: .94;
+  opacity: 0; translate: 0 48px; scale: .96;
   transition:
-    opacity .7s var(--ease) calc(var(--i, 0) * 90ms),
-    translate .9s var(--ease) calc(var(--i, 0) * 90ms),
-    scale .9s var(--ease) calc(var(--i, 0) * 90ms),
+    opacity .7s var(--ease) calc(var(--i, 0) * 80ms),
+    translate .9s var(--ease) calc(var(--i, 0) * 80ms),
+    scale .9s var(--ease) calc(var(--i, 0) * 80ms),
     transform .15s, box-shadow .15s, rotate .3s, background-color .3s;
 }
 .motion .rv.in { opacity: 1; translate: 0 0; scale: 1; }
 
-/* 标题像被一刀划开一样从左往右出现 */
+/* 标题像被一刀划开一样从左往右出现（由外面的 .sec-head 触发） */
 .motion .sec-head.rv { opacity: 1; translate: none; scale: none; }
 .motion .sec-head.rv h2 { clip-path: inset(-30% 100% -30% -5%); transition: clip-path 1s var(--ease) .1s; }
 .motion .sec-head.rv.in h2 { clip-path: inset(-30% -10% -30% -5%); }
 
-/* ---------- 首页开头：名字逐字掉下来，往下滚时整体放大淡出 ---------- */
+/* ---------- 首页开头：逐字掉下来，往下滚时淡出 ---------- */
 .motion .mega .ch { display: inline-block; animation: drop .9s var(--ease) both; animation-delay: calc(var(--i) * 70ms + .1s); }
 @keyframes drop { from { opacity: 0; translate: 0 -.7em; rotate: -14deg; } }
 .motion .hero .kicker, .motion .hero .tagline, .motion .hero .intro, .motion .hero .actions { animation: rise .8s var(--ease) both; }
@@ -36,58 +36,29 @@
 .motion .hero .actions { animation-delay: .55s; }
 @keyframes rise { from { opacity: 0; translate: 0 24px; } }
 
-.motion [data-p="out"] .mega { translate: 0 calc(var(--p, 0) * -70px); scale: calc(1 + var(--p, 0) * .18); opacity: calc(1 - var(--p, 0) * .8); }
-.motion .hero .blob { scale: calc(1 + var(--p, 0) * 1.4); translate: calc(var(--p, 0) * -18vw) calc(var(--p, 0) * 12vh); }
-.motion .hero .star.s1, .motion .phead .star.s1 { translate: 0 calc(var(--p, 0) * -320px); }
-.motion .hero .star.s2 { translate: calc(var(--p, 0) * 200px) calc(var(--p, 0) * 160px); }
-.motion .hero .avatar-wrap { translate: 0 calc(var(--p, 0) * 120px); }
-.motion .hero .ring { rotate: calc(var(--p, 0) * 300deg); }
+.motion [data-p="out"] .mega { translate: 0 calc(var(--p, 0) * -50px); opacity: calc(1 - var(--p, 0) * .7); }
+.motion .hero .blob { scale: calc(1 + var(--p, 0) * 1.2); translate: calc(var(--p, 0) * -14vw) calc(var(--p, 0) * 10vh); }
+.motion .hero .star.s1, .motion .phead .star.s1 { translate: 0 calc(var(--p, 0) * -260px); }
+.motion .hero .star.s2 { translate: calc(var(--p, 0) * 160px) calc(var(--p, 0) * 120px); }
+.motion .hero .avatar-wrap { translate: 0 calc(var(--p, 0) * 100px); }
+.motion .hero .ring { rotate: calc(var(--p, 0) * 200deg); }
 
-/* 区块背后的空心英文，随滚动横向漂移 */
-.motion .sec-head[data-p] .ghost { translate: calc((var(--p, .5) - .5) * -260px) 0; }
+/* 区块背后的空心大字，随滚动横向漂移 */
+.motion .sec-head[data-p] .ghost { translate: calc((var(--p, .5) - .5) * -160px) 0; }
 
 /* 页脚大字从右边滑进来 */
-.motion #footer [data-p] .foot-big { translate: calc((1 - var(--p, 1)) * 45%) 0; }
+.motion #footer [data-p] .foot-big { translate: calc((1 - var(--p, 1)) * 30%) 0; }
 
-/* 滚动越快，卡片越“歪” —— 果冻感 */
-.motion .grid { transform: skewY(calc(var(--v, 0) * 1.6deg)); }
-
-/* 字幕条由 JS 驱动：跟着滚动方向走、越滚越快 */
+/* 字幕条由 JS 驱动 */
 .motion .track { animation: none; will-change: transform; }
 
-/* ---------- 贯穿全站的手绘线（SVG） ---------- */
+/* ---------- 贯穿全站的线（SVG） ---------- */
 .thread { position: absolute; left: 0; top: 0; width: 100%; z-index: -1; pointer-events: none; overflow: visible; }
 .th-path { fill: none; stroke: var(--violet); stroke-width: 3; stroke-linecap: round; opacity: .55; }
 .th-dot { fill: var(--pink); stroke: var(--line); stroke-width: 3; }
 
-/* ---------- 软件横向长廊：电脑上竖着滚、卡片横着走 ---------- */
-.hscroll.pinned { height: var(--hs-h); padding: 0; }
-.hscroll.pinned .hs-sticky {
-  position: sticky; top: 60px; height: calc(100vh - 60px); overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center;
+/* ---------- 打印 / 导出 PDF 时全部显示，不要动效 ---------- */
+@media print {
+  .motion .rv, .motion .sec-head.rv h2 { opacity: 1 !important; translate: none !important; scale: none !important; clip-path: none !important; }
+  .progress, .thread, .wx-fab, .marquee, .open-sign, .star, .blob { display: none !important; }
 }
-.hscroll.pinned .hs-track {
-  display: flex; align-items: stretch; gap: 30px; max-width: none; margin: 0; width: max-content;
-  padding: 18px 16px 30px max(16px, calc((100vw - 1120px) / 2 + 16px));
-  translate: var(--hs-x, 0) 0; transform: skewX(calc(var(--v, 0) * -3deg)); will-change: translate;
-}
-.hscroll.pinned .hs-track > .card { flex: 0 0 min(400px, 70vw); }
-.hscroll.pinned .hs-panel { display: flex; }
-.hscroll.pinned .hs-bar {
-  display: block; height: 6px; border-radius: 99px; background: color-mix(in srgb, var(--line) 15%, transparent);
-  max-width: 280px; margin: -12px 0 6px; overflow: hidden;
-}
-.hs-bar i { display: block; height: 100%; background: var(--violet); transform-origin: left; transform: scaleX(var(--hp, 0)); }
-.hs-panel { flex: 0 0 auto; flex-direction: column; justify-content: center; }
-.hs-intro { width: min(360px, 60vw); padding-right: 10px; }
-.hs-intro b { font: 900 220px/.8 var(--display); color: transparent; -webkit-text-stroke: 3px var(--line); }
-.hs-intro span { font: 900 40px/1.1 var(--display); margin-top: 10px; }
-.hs-intro em { font-style: normal; font-weight: 800; color: var(--muted); margin-top: 18px; }
-.hs-end {
-  width: min(380px, 70vw); gap: 10px; padding: 32px; border-radius: 28px;
-  background: var(--pink); color: var(--on-pink); border: 3px solid var(--line); box-shadow: 8px 8px 0 var(--shadow);
-  transition: transform .15s;
-}
-.hs-end:hover { transform: rotate(-2deg) scale(1.02); }
-.hs-end span { font-weight: 800; }
-.hs-end b { font: 900 48px/1 var(--display); }
