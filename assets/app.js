@@ -28,7 +28,8 @@
 
   // 价格数字包一层 data-count，滚动到时会从 0 跳到这个数
   const num = (n) => `<b data-count="${n}">${n}</b>`;
-  const priceText = (pl) => (pl.price === 0 ? "免费" : `¥${num(pl.price)}`);
+  // price: 0 = 免费；null = 还没定价（开发中），显示「敬请期待」
+  const priceText = (pl) => (pl.price == null ? "敬请期待" : pl.price === 0 ? "免费" : `¥${num(pl.price)}`);
   const minPrice = (p) => {
     const ps = (p.plans || []).map((x) => x.price).filter((x) => x > 0);
     return ps.length ? Math.min(...ps) : null;
@@ -42,13 +43,14 @@
 
   const marquee = (items) => {
     if (!items || !items.length) return "";
-    const row = items.map((t) => `<span>${esc(t)}</span><i>✦</i>`).join("");
+    const row = items.map((t) => `<span>${esc(t)}</span><i>★</i>`).join("");
     return `<div class="marquee" aria-hidden="true"><div class="track">${row}${row}${row}${row}</div></div>`;
   };
 
   const sticker = (status) => status
     ? `<span class="sticker ${status === "在售" ? "" : "alt"}">${esc(status)}</span>` : "";
 
+  const SHOP = S.shop || S.name || "我的小铺";
   const posts = () => (S.posts || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
   /* ---------- 通用：导航、页脚、联系方式、复制 ---------- */
@@ -65,14 +67,14 @@
       [`${base}#contact`, "联系"],
     ].filter(Boolean);
     $("#nav").innerHTML = `<div class="wrap nav">
-      <a class="brand" href="${base || "#"}">${esc(S.name)}<i>✦</i></a>
+      <a class="brand" href="${base || "#"}">${esc(SHOP)}<i>✦</i></a>
       <nav>${links.map(([h, t, on]) => `<a href="${h}" class="${on ? "on" : ""}">${t}</a>`).join("")}</nav>
     </div>`;
     $("#footer").innerHTML = `<div class="band" data-p="enter">
       <div class="wrap foot">
-        <div class="foot-big" aria-hidden="true">THANK YOU ✦</div>
+        <div class="foot-big" aria-hidden="true">慢走，常来 ✦</div>
         <div class="foot-row">
-          <span>© ${new Date().getFullYear()} ${esc(S.name)} · 一个人的软件铺子</span>
+          <span>© ${new Date().getFullYear()} ${esc(SHOP)} · ${esc(S.name)}</span>
           ${S.showOpenSource && S.github ? `<a href="https://github.com/${esc(S.github)}" target="_blank" rel="noopener">GitHub ↗</a>` : ""}
         </div>
       </div>
@@ -131,7 +133,7 @@
       <div class="pc-top">${icon(p)}<h3>${esc(p.name)}</h3></div>
       <p>${esc(p.summary)}</p>
       <div class="tags">${(p.tags || []).map((t) => `<span>${esc(t)}</span>`).join("")}</div>
-      <div class="pc-foot"><span class="price">${m != null ? `¥${num(m)}<small>起</small>` : "FREE"}</span><span class="go">→</span></div>
+      <div class="pc-foot"><span class="price">${m != null ? `¥${num(m)}<small>起</small>` : (p.plans || []).some((x) => x.price == null) ? "敬请期待" : "免费"}</span><span class="go">→</span></div>
     </a>`;
   }
 
@@ -148,50 +150,46 @@
   /* ---------- 首页 ---------- */
 
   function renderHome() {
-    document.title = S.name || "我的小铺";
+    document.title = SHOP;
     const cu = S.custom || {};
     const sp = S.sponsor || {};
     const lab = S.lab || [];
+    const hasSponsor = sp.afdian || sp.wechatReward || S.pay?.usdt?.address;
     const products = S.products || [];
     const latest = posts().slice(0, 3);
     $("#app").innerHTML = `
     <section class="hero wrap" data-p="out" data-tone="cream">
       <i class="star s1" aria-hidden="true"></i><i class="star s2" aria-hidden="true"></i><i class="blob" aria-hidden="true"></i>
       <div class="hero-text">
-        <span class="kicker">✦ INDIE SOFTWARE SHOP ✦</span>
-        <h1 class="mega" data-split>${esc(S.name)}</h1>
+        <span class="kicker">✦ ${esc(S.name)}的小铺子 · 自产自销 ✦</span>
+        <div class="sign"><h1 class="mega" data-split>${esc(SHOP)}</h1></div>
         <p class="tagline"><span>${esc(S.tagline)}</span></p>
         <p class="intro">${esc(S.intro)}</p>
         <div class="actions">
-          <a class="btn primary" href="#products">逛逛软件 →</a>
+          <a class="btn primary" href="#products">进店逛逛 →</a>
           <a class="btn" href="#custom">找我定制</a>
         </div>
       </div>
       <div class="avatar-wrap">
         <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
           <defs><path id="ring-path" d="M100,100 m-86,0 a86,86 0 1,1 172,0 a86,86 0 1,1 -172,0"/></defs>
-          <text><textPath href="#ring-path" textLength="535" lengthAdjust="spacing">✦ INDIE DEV ✦ 独立开发者 ✦ MADE BY HAND ✦ 先试后买 </textPath></text>
+          <text><textPath href="#ring-path" textLength="535" lengthAdjust="spacing">★ 欢迎光临 ★ ${esc(S.name)}的杂货铺 ★ 童叟无欺 ★ 先试后买 </textPath></text>
         </svg>
         ${pic(S.avatar, "avatar", (S.name || "我")[0])}
-        <span class="sticker big">NEW!!</span>
+        <div class="open-sign" aria-hidden="true"><span>营业中</span></div>
       </div>
     </section>
 
     ${marquee(S.marquee)}
 
-    <section id="products" class="hscroll" data-tone="lilac">
-      <div class="hs-sticky">
-        <div class="wrap">${head("SHOP", "软件", "都能先免费试用，满意再买")}<div class="hs-bar"><i></i></div></div>
-        <div class="hs-track">
-          <div class="hs-panel hs-intro"><b>${products.length}</b><span>款软件<br>正在出摊</span><em>继续往下滚 ↓</em></div>
-          ${products.map(cardHTML).join("")}
-          <a class="hs-panel hs-end" href="#custom"><span>没找到想要的？</span><b>找我定制 →</b></a>
-        </div>
-      </div>
+    <section id="products" class="wrap section" data-tone="lilac">
+      ${head("货架", "软件", `${products.length} 款软件正在出摊，都能先免费试用，满意再买`)}
+      <div class="grid">${products.map(cardHTML).join("")}</div>
+      <div class="shop-foot"><span>没找到想要的？</span><a class="btn" href="#custom">找我定做 →</a></div>
     </section>
 
     ${latest.length ? `<section id="news" class="wrap section" data-tone="butter">
-      ${head("NEWS", "最新动态", "教程、更新、新软件上架")}
+      ${head("告示", "最新动态", "教程、更新、新软件上架")}
       <div class="grid">${latest.map(postCard).join("")}</div>
       <div class="see-all"><a class="btn" href="posts.html">全部文章 →</a></div>
     </section>` : ""}
@@ -204,22 +202,22 @@
     </section>` : ""}
 
     ${lab.length ? `<section id="lab" class="wrap section" data-tone="mint">
-      ${head("LAB", "实验室", "小实验和半成品，好玩为主")}
-      <div class="grid">${lab.map((x) => `<a class="card lab" href="${esc(x.link || "#")}">
+      ${head("后厨", "实验室", "后厨里还在捣鼓的东西")}
+      <div class="grid">${lab.map((x) => `<${x.link ? `a href="${esc(x.link)}"` : "div"} class="card lab">
         ${x.cover ? pic(x.cover, "thumb", x.cover) : ""}
-        <h3>${esc(x.name)}</h3><p>${esc(x.desc)}</p></a>`).join("")}</div>
+        <h3>${esc(x.name)}</h3><p>${esc(x.desc)}</p></${x.link ? "a" : "div"}>`).join("")}</div>
     </section>` : ""}
 
     <section id="custom" class="wrap section" data-tone="pink">
-      ${head("CUSTOM", "定制开发", cu.intro)}
+      ${head("定做", "定制开发", cu.intro)}
       <div class="grid services">${(cu.services || []).map((s, i) =>
         `<div class="card"><b class="num">${String(i + 1).padStart(2, "0")}</b><h3>${esc(s.title)}</h3><p>${esc(s.desc)}</p></div>`).join("")}</div>
       ${cu.steps ? `<ol class="flow">${cu.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
       <div class="actions"><a class="btn primary" href="#contact">聊聊你的需求 →</a></div>
     </section>
 
-    <section id="sponsor" class="wrap section" data-tone="lilac">
-      ${head("LOVE", "赞助")}
+    ${hasSponsor ? `<section id="sponsor" class="wrap section" data-tone="lilac">
+      ${head("打赏", "赞助")}
       <div class="card sponsor">
         <i class="star s3" aria-hidden="true"></i>
         <div class="sp-text">
@@ -231,10 +229,10 @@
         </div>
         ${sp.wechatReward ? `<figure>${pic(sp.wechatReward, "qr", "微信赞赏码\n" + sp.wechatReward)}<figcaption>微信赞赏</figcaption></figure>` : ""}
       </div>
-    </section>
+    </section>` : ""}
 
     <section id="contact" class="wrap section" data-tone="cream">
-      ${head("HELLO", "联系我", "买软件、定制、反馈问题都可以")}
+      ${head("吆喝", "联系我", "买软件、定制、反馈问题都可以")}
       <div class="card">${contactHTML()}</div>
     </section>`;
     if (S.showOpenSource) loadRepos();
@@ -288,7 +286,7 @@
         <p><a class="btn primary" href="index.html#products">← 返回全部软件</a></p></section>`;
       return;
     }
-    document.title = `${p.name} · ${S.name}`;
+    document.title = `${p.name} · ${SHOP}`;
     const media = p.bilibili
       ? `<div class="video"><iframe src="https://player.bilibili.com/player.html?bvid=${encodeURIComponent(p.bilibili)}&autoplay=0&high_quality=1" allowfullscreen loading="lazy"></iframe></div>`
       : p.cover ? pic(p.cover, "cover", "软件截图\n" + p.cover) : "";
@@ -305,7 +303,7 @@
       <p class="tagline"><span>${esc(p.summary)}</span></p>
       <div class="tags">${(p.tags || []).map((t) => `<span>${esc(t)}</span>`).join("")}</div>
       <div class="actions">
-        ${plans.length ? `<a class="btn primary" href="#pricing">看价格 →</a>` : ""}
+        ${plans.length ? `<a class="btn primary" href="#pricing">${plans.every((x) => x.price == null) ? "预约内测 →" : "看价格 →"}</a>` : ""}
         ${(p.downloads || []).length ? `<a class="btn" href="#download">下载试用</a>` : ""}
       </div>
     </section>
@@ -315,38 +313,38 @@
     ${marquee(p.tags && p.tags.length ? p.tags.concat(feats.map((f) => f.title)) : null)}
 
     ${feats.length ? `<section class="wrap section" data-tone="lilac">
-      ${head("WHAT", "能做什么")}
+      ${head("功能", "能做什么")}
       <div class="grid feats">${feats.map((f, i) => `<div class="card"><b class="num">${String(i + 1).padStart(2, "0")}</b><h3>${esc(f.title)}</h3>${f.desc ? `<p>${esc(f.desc)}</p>` : ""}</div>`).join("")}</div>
     </section>` : ""}
 
     ${plans.length ? `<section id="pricing" class="wrap section" data-tone="butter">
-      ${head("PRICE", "价格", "付款后发激活码，一般几分钟内回复")}
+      ${head("价目", "价格", "付款后发激活码，一般几分钟内回复")}
       <div class="plans">${plans.map((pl, i) => `<div class="card plan ${pl.highlight ? "hot" : ""}">
-        ${pl.highlight ? `<span class="sticker big">推荐!!</span>` : ""}
+        ${pl.highlight ? `<span class="sticker big">店长推荐</span>` : ""}
         <h3>${esc(pl.name)}</h3>
         <div class="amount">${priceText(pl)}<small>${esc(pl.unit || "")}</small></div>
         <p>${esc(pl.desc)}</p>
-        <button class="btn ${pl.highlight ? "primary" : ""}" data-plan="${i}">${pl.price === 0 ? "免费下载" : "立即购买 →"}</button>
+        <button class="btn ${pl.highlight ? "primary" : ""}" data-plan="${i}">${pl.price == null ? "加微信预约 →" : pl.price === 0 ? "免费下载" : "立即购买 →"}</button>
       </div>`).join("")}</div>
     </section>` : ""}
 
     ${(p.downloads || []).length ? `<section id="download" class="wrap section" data-tone="mint">
-      ${head("GET", "下载", "下载后打开软件即可开始试用")}
+      ${head("提货", "下载", "下载后打开软件即可开始试用")}
       <div class="actions">${p.downloads.map((d) => `<a class="btn" href="${esc(d.url)}" ${/^https?:/.test(d.url) ? 'target="_blank" rel="noopener"' : ""}>↓ ${esc(d.label)}</a>`).join("")}</div>
     </section>` : ""}
 
     ${related.length ? `<section class="wrap section" data-tone="mint">
-      ${head("NEWS", "教程和公告")}
+      ${head("告示", "教程和公告")}
       <div class="grid">${related.map(postCard).join("")}</div>
     </section>` : ""}
 
     ${(p.changelog || []).length ? `<section class="wrap section" data-tone="cream">
-      ${head("LOG", "更新日志")}
+      ${head("流水", "更新日志")}
       <ul class="changelog">${p.changelog.map((c) => `<li><b>v${esc(c.version)}</b><time>${esc(c.date)}</time><span>${esc(c.notes)}</span></li>`).join("")}</ul>
     </section>` : ""}
 
     ${(p.faq || []).length ? `<section class="wrap section" data-tone="pink">
-      ${head("FAQ", "常见问题")}
+      ${head("问答", "常见问题")}
       <div class="faq">${p.faq.map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
     </section>` : ""}
 
@@ -359,7 +357,9 @@
       const b = e.target.closest("[data-plan]");
       if (!b) return;
       const pl = plans[+b.dataset.plan];
-      if (pl.price === 0) {
+      if (pl.price == null) {
+        location.href = "index.html#contact";
+      } else if (pl.price === 0) {
         const dl = $("#download");
         if (dl) dl.scrollIntoView({ behavior: "smooth" });
       } else {
@@ -374,11 +374,11 @@
     const TYPES = ["全部", "教程", "公告"];
     let type = new URLSearchParams(location.search).get("type");
     if (!TYPES.includes(type)) type = "全部";
-    document.title = `教程和公告 · ${S.name}`;
+    document.title = `教程和公告 · ${SHOP}`;
     $("#app").innerHTML = `
     <section class="wrap phead" data-p="out" data-tone="cream">
       <i class="star s1" aria-hidden="true"></i>
-      <span class="kicker">✦ JOURNAL ✦</span>
+      <span class="kicker">✦ 小黑板 ✦</span>
       <h1 class="mega" data-split>教程和公告</h1>
       <p class="tagline"><span>使用教程、版本更新、新软件上架，都写在这里</span></p>
       <div class="filters">${TYPES.map((t) => `<button data-type="${t}">${t}</button>`).join("")}</div>
@@ -468,7 +468,7 @@
         <p><a class="btn primary" href="posts.html">← 全部文章</a></p></section>`;
       return;
     }
-    document.title = `${x.title} · ${S.name}`;
+    document.title = `${x.title} · ${SHOP}`;
     const prod = (S.products || []).find((p) => p.id === x.product);
     const newer = list[idx - 1];
     const older = list[idx + 1];
@@ -515,11 +515,15 @@
       <div class="addr"><code>${esc(pay.usdt.address)}</code><button class="copy" data-copy="${esc(pay.usdt.address)}">复制</button></div>
       <p class="muted">金额按当天汇率折算，转账前先跟我确认。一定要选对网络，转错无法找回。</p>`]);
 
+    const wx = S.contact?.wechat;
+    if (!tabs.length) tabs.push(["微信付款", `<p>加我微信，告诉我要买「${esc(note)}」，我发收款码给你。</p>
+      ${wx ? `<div class="addr"><code>${esc(wx)}</code><button class="copy" data-copy="${esc(wx)}">复制微信号</button></div>` : ""}`]);
+
     const mask = document.createElement("div");
     mask.className = "mask";
     mask.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="购买">
       <button class="x" aria-label="关闭">×</button>
-      <span class="kicker">✦ CHECKOUT ✦</span>
+      <span class="kicker">✦ 结账 ✦</span>
       <h3>${esc(p.name)} · ${esc(pl.name)}</h3>
       <div class="amount">¥${pl.price}<small>${esc(pl.unit || "")}</small></div>
       <ol class="steps">
